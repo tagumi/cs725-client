@@ -73,6 +73,10 @@ class TCPClient {
             if(serverResponse.charAt(0) == '+'){
                 connectedToServer = true;
                 return serverResponse;
+            } else {
+                //ask if they want to try connect again
+                System.out.println(serverResponse);
+                System.out.println("Server not available");
             }
 
         }
