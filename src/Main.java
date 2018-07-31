@@ -1,5 +1,4 @@
 import java.io.*;
-import java.net.*;
 
 public class Main {
 
@@ -9,7 +8,6 @@ public class Main {
                 new BufferedReader(new InputStreamReader(System.in));
 
         TCPClient camsTCPClient = new TCPClient();
-        //camsTCPClient.sendCommand(inFromUser.readLine());
 
     }
 }
