@@ -29,12 +29,7 @@ class TCPClient {
             clientCommand = inFromUser.readLine();
 
             //TODO: Remove this, just exits client process if requested
-            if (checkExit(clientCommand)){
-                if (clientSocket != null) {
-                    clientSocket.close();
-                }
-                break;
-            }
+
 
             if(goodCommand(clientCommand, loggedIn)){
                 sendCommand(clientCommand);
@@ -45,10 +40,16 @@ class TCPClient {
                 if (serverResponse.charAt(0) == '!'){
                     loggedIn = true;
                 }
+                if (checkExit(clientCommand,serverResponse)){
+                    break;
+                }
             } else {
                 System.out.println("Bad command, you're either not logged in or you don't know what you're doing");
             }
 
+        }
+        if (clientSocket != null) {
+            clientSocket.close();
         }
 
     }
@@ -95,8 +96,14 @@ class TCPClient {
         }
     }
 
-    private boolean checkExit(String command){
-        return (command.equals("EXIT"));
+    private boolean checkExit(String command, String receive){
+        if(command.length() > 3){
+            String substring = command.substring(0, 4);
+            System.out.println(substring);
+            return (substring.equals("DONE") && (receive.charAt(0) == '+'));
+        } else {
+            return false;
+        }
     }
 
     private String getServerCommand(BufferedReader inFromClient) throws IOException {
