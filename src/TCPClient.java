@@ -1,5 +1,8 @@
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -12,6 +15,7 @@ class TCPClient {
     private DataOutputStream outToServer;
     private BufferedReader inFromServer;
     private boolean loggedIn = false;
+    private String retrLocation = "unnamed";
 
     public TCPClient() throws IOException {
         String clientCommand;
@@ -34,11 +38,30 @@ class TCPClient {
             if(goodCommand(clientCommand, loggedIn)){
                 sendCommand(clientCommand);
                 //busy wait for server response
-                serverResponse = getServerCommand(inFromServer);
-                //print response
-                System.out.println(serverResponse);
-                if (serverResponse.charAt(0) == '!'){
-                    loggedIn = true;
+                if (checkRETR(parseString(clientCommand))){
+                    serverResponse = getServerCommand(inFromServer);
+                    System.out.println(serverResponse);
+                    //double check ok
+                    clientCommand = inFromUser.readLine();
+                    sendCommand(clientCommand);
+                    serverResponse = getServerCommand(inFromServer);
+                    if(sendConfirm(clientCommand)){
+                        //wait for response
+                        saveData(retrLocation, serverResponse);
+                    } else {
+                        //print response
+                        System.out.println(serverResponse);
+                        if (serverResponse.charAt(0) == '!'){
+                            loggedIn = true;
+                        }
+                    }
+                } else {
+                    serverResponse = getServerCommand(inFromServer);
+                    //print response
+                    System.out.println(serverResponse);
+                    if (serverResponse.charAt(0) == '!'){
+                        loggedIn = true;
+                    }
                 }
                 if (checkExit(clientCommand,serverResponse)){
                     break;
@@ -51,6 +74,23 @@ class TCPClient {
         if (clientSocket != null) {
             clientSocket.close();
         }
+
+    }
+
+    private boolean sendConfirm(String clientCommand) {
+        if(clientCommand.length() > 3){
+            String substring = clientCommand.substring(0, 4);
+            return (substring.equals("SEND"));
+        } else {
+            return false;
+        }
+    }
+
+    private void saveData(String location, String serverResponse) throws IOException {
+            Path file = Paths.get(location);
+            String nullRemoved = serverResponse.substring(0, serverResponse.length() - 1);
+            byte[] data = nullRemoved.getBytes();
+            Files.write(file, data);
 
     }
 
@@ -96,10 +136,27 @@ class TCPClient {
         }
     }
 
+    private boolean checkRETR(String[] command){
+        if(command[0].length() > 3){
+            String substring = command[0].substring(0, 4);
+            if (substring.equals("RETR")){
+                if (command[1] != null){
+                    retrLocation = command[1];
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return false;
+    }
+
     private boolean checkExit(String command, String receive){
         if(command.length() > 3){
             String substring = command.substring(0, 4);
-            System.out.println(substring);
             return (substring.equals("DONE") && (receive.charAt(0) == '+'));
         } else {
             return false;
