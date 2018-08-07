@@ -81,7 +81,7 @@ class TCPClient {
         String command = userCommand.substring(0, Math.min(userCommand.length(), 4));
         List<String> logInCommands = Arrays.asList("USER", "ACCT", "PASS");
         List<String> goodCommands = Arrays.asList("USER", "ACCT", "PASS", "TYPE",
-                "LIST", "CDIR", "KILL", "NAME", "DONE", "RETR", "STOR");
+                "LIST", "CDIR", "KILL", "NAME", "DONE", "RETR", "STOR", "TOBE");
         if(loggedIn){
             return goodCommands.contains(command);
         } else {
