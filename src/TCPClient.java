@@ -16,6 +16,7 @@ class TCPClient {
     private BufferedReader inFromServer;
     private boolean loggedIn = false;
     private String retrLocation = "unnamed";
+    private String storLocation = "unnamed";
 
     public TCPClient() throws IOException {
         String clientCommand;
@@ -55,6 +56,39 @@ class TCPClient {
                             loggedIn = true;
                         }
                     }
+                } else if(checkSTOR(parseString(clientCommand))){
+                    storLocation = parseString(clientCommand)[2];
+                    serverResponse = getServerCommand(inFromServer);
+                    System.out.println(serverResponse);
+                    //double check ok
+                    if(serverResponse.charAt(0) == '+'){
+                        sendSize();
+                        serverResponse = getServerCommand(inFromServer);
+                        System.out.println(serverResponse);
+                        if(serverResponse.charAt(0) == '+'){
+                            sendFile();
+                            serverResponse = getServerCommand(inFromServer);
+                            System.out.println(serverResponse);
+                        } else {
+                            clientCommand = inFromUser.readLine();
+                            sendCommand(clientCommand);
+                            serverResponse = getServerCommand(inFromServer);
+                            //print response
+                            System.out.println(serverResponse);
+                            if (serverResponse.charAt(0) == '!'){
+                                loggedIn = true;
+                            }
+                        }
+                    } else {
+                        clientCommand = inFromUser.readLine();
+                        sendCommand(clientCommand);
+                        serverResponse = getServerCommand(inFromServer);
+                        //print response
+                        System.out.println(serverResponse);
+                        if (serverResponse.charAt(0) == '!'){
+                            loggedIn = true;
+                        }
+                    }
                 } else {
                     serverResponse = getServerCommand(inFromServer);
                     //print response
@@ -75,6 +109,39 @@ class TCPClient {
             clientSocket.close();
         }
 
+    }
+
+    private void sendFile() throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(storLocation)));
+        sendCommand(content);
+    }
+
+    private void sendSize() throws IOException {
+        File file = new File(storLocation);
+        if(!file.exists()){
+            sendCommand("-File doesn't exist");
+        } else {
+            String fileSize = Long.toString(file.length());
+            sendCommand("SIZE " + fileSize);
+        }
+    }
+
+    private boolean checkSTOR(String[] command) {
+        if(command[0].length() > 3){
+            String substring = command[0].substring(0, 4);
+            if (substring.equals("STOR")){
+                if (command[1] != null){
+                    retrLocation = command[2];
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return false;
     }
 
     private boolean sendConfirm(String clientCommand) {
@@ -141,7 +208,7 @@ class TCPClient {
             String substring = command[0].substring(0, 4);
             if (substring.equals("RETR")){
                 if (command[1] != null){
-                    retrLocation = command[1];
+                    storLocation = command[1];
                     return true;
                 } else {
                     return false;
